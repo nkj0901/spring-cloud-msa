@@ -10,11 +10,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-//@Slf4j
+@Slf4j
 @RequestMapping("/second-service/")
 public class SecondServiceController {
 
-    private static final Logger log = LoggerFactory.getLogger(SecondServiceController.class);
+//    private static final Logger log = LoggerFactory.getLogger(SecondServiceController.class);
+
     @GetMapping("/welcome")
     public String welcome() {
         return "Welcome to the Second service";
@@ -24,5 +25,10 @@ public class SecondServiceController {
     public String message(@RequestHeader("second-request") String header) {
         log.info(header);
         return "Hello World in Second service";
+    }
+
+    @GetMapping("check")
+    public String check() {
+        return "Hi, there. This is a message from Second Service.";
     }
 }
