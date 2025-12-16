@@ -8,6 +8,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.core.env.Environment;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -45,6 +47,9 @@ public class UserServiceImpl implements UserService {
 
         UserDto returnUserDto = mapper.map(userEntity, UserDto.class);
 
+        System.out.println("회원가입 - 원본 비밀번호: " + userDto.getPwd());
+        System.out.println("회원가입 - 암호화된 비밀번호: " + userEntity.getEncryptedPwd());
+
         return returnUserDto;
     }
 
@@ -67,5 +72,33 @@ public class UserServiceImpl implements UserService {
     @Override
     public Iterable<UserEntity> getUserByAll() {
         return userRepository.findAll();
+    }
+
+    @Override
+    public UserDto getUserDetailsByEmail(String email) {
+        UserEntity userEntity = userRepository.findByEmail(email);
+
+        return new ModelMapper().map(userEntity, UserDto.class);
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+
+        System.out.println("=== loadUserByUsername 호출됨 ===");
+        System.out.println("검색할 username(email): " + username);
+
+        UserEntity userEntity = userRepository.findByEmail(username);
+
+        if(userEntity == null) {
+            System.err.println("사용자를 찾을 수 없음: " + username);
+            throw new UsernameNotFoundException(username + ": not found");
+        }
+
+        System.out.println("DB에서 찾은 사용자 ID: " + userEntity.getUserId());
+        System.out.println("DB에 저장된 암호화된 비밀번호: " + userEntity.getEncryptedPwd());
+
+        return new User(userEntity.getEmail(), userEntity.getEncryptedPwd()
+        , true, true, true, true,
+        new ArrayList<>());
     }
 }

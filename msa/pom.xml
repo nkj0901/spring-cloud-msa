@@ -19,6 +19,7 @@
         <module>second-service</module>
         <module>catalog-service</module>
         <module>order-service</module>
+        <module>config-service</module>
     </modules>
     <name>msa</name>
     <description>msa</description>

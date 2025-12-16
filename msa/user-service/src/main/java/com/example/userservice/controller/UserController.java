@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @RestController
-@RequestMapping("/user-service")
+@RequestMapping("/")
 @Slf4j
 public class UserController {
     private Environment env;
@@ -36,11 +36,15 @@ public class UserController {
         this.userService = userService;
     }
 
-    @GetMapping("/health-check") // http://localhost:60000/health-check
+    @GetMapping("/health-check")
     public String status() {
         return String.format("It's Working in User Service"
                 + ", port(local.server.port)=" + env.getProperty("local.server.port")
-                + ", port(server.port)=" + env.getProperty("server.port"));
+                + ", port(server.port)=" + env.getProperty("server.port")
+                + ", welcome message=" + env.getProperty("greeting.message")
+                + ", gateway ip(env)=" + env.getProperty("gateway.ip")
+                + ", token secret key=" + env.getProperty("token.secret")
+                + ", token expiration time=" + env.getProperty("token.expiration-time"));
     }
 
     @GetMapping("/welcome")

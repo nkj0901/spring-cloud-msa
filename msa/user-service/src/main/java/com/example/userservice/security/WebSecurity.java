@@ -4,10 +4,14 @@ import com.example.userservice.service.UserService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.expression.WebExpressionAuthorizationManager;
 import org.springframework.security.web.util.matcher.IpAddressMatcher;
 
 @Configuration
@@ -15,27 +19,51 @@ import org.springframework.security.web.util.matcher.IpAddressMatcher;
 public class WebSecurity {
     private UserService userService;
     private Environment env;
+    private BCryptPasswordEncoder bCryptPasswordEncoder;
 
     public static final String ALLOWED_IP_ADDRESS = "127.0.0.1";
     public static final String SUBNET = "/32";
     public static final IpAddressMatcher ALLOWED_IP_ADDRESS_MATCHER = new IpAddressMatcher(ALLOWED_IP_ADDRESS + SUBNET);
 
-    public WebSecurity(Environment env, UserService userService) {
+    public WebSecurity(Environment env, UserService userService, BCryptPasswordEncoder bCryptPasswordEncoder) {
         this.env = env;
         this.userService = userService;
+        this.bCryptPasswordEncoder = bCryptPasswordEncoder;
     }
 
     @Bean
     protected SecurityFilterChain configure(HttpSecurity http) throws Exception {
+        AuthenticationManagerBuilder authenticationManagerBuilder =
+                http.getSharedObject(AuthenticationManagerBuilder.class);
+        authenticationManagerBuilder.userDetailsService(userService).passwordEncoder(bCryptPasswordEncoder);
+
+        AuthenticationManager authenticationManager = authenticationManagerBuilder.build();
+
+        System.out.println("=== SecurityFilterChain 구성 중 ===");
+
         http.csrf( (csrf) -> csrf.disable())
-            .authorizeHttpRequests(auth -> auth
-                    .requestMatchers("/h2-console/**").permitAll()  // 특정 경로 허용
-                    .anyRequest().authenticated()              // 그 외는 인증 필요
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/h2-console/**").permitAll()  // 특정 경로 허용
+                        .requestMatchers("/**").access(
+                                new WebExpressionAuthorizationManager(
+                                        "hasIpAddress('127.0.0.1') or hasIpAddress('::1') or hasIpAddress('10.30.207.187')")) // host pc ip address
+                        .anyRequest().authenticated()              // 그 외는 인증 필요
                 )
-            .httpBasic(Customizer.withDefaults())  // ← Basic 인증 추가(아이디 패스워드 값으로 로그인)
-            .headers((headers) -> headers
-                .frameOptions((frameOptions) -> frameOptions.sameOrigin()));
+                .authenticationManager(authenticationManager)
+                .addFilter(getAuthenticationFilter(authenticationManager))
+                .httpBasic(Customizer.withDefaults())  // ← Basic 인증 추가
+                .headers((headers) -> headers
+                        .frameOptions((frameOptions) -> frameOptions.sameOrigin()));
 
         return http.build();
+    }
+
+    private AuthenticationFilter getAuthenticationFilter(AuthenticationManager authenticationManager) throws Exception {
+        AuthenticationFilter authenticationFilter = new AuthenticationFilter(userService, env, authenticationManager);
+        authenticationFilter.setAuthenticationManager(authenticationManager);
+
+        System.out.println("=== AuthenticationFilter 생성됨 ===");
+
+        return authenticationFilter;
     }
 }
