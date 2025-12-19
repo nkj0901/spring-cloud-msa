@@ -28,13 +28,13 @@ import java.util.Date;
 // 사용자의 인증을 위해 필요한 필터
 public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
     private UserService userService;
-    private Environment env;
+    private Environment environment;
 
-    public AuthenticationFilter(UserService userService, Environment env,
+    public AuthenticationFilter(UserService userService, Environment environment,
                                 AuthenticationManager authenticationManager) {
+        super(authenticationManager);
         this.userService = userService;
-        this.env = env;
-        super.setAuthenticationManager(authenticationManager);
+        this.environment = environment;
     }
 
     @Override
@@ -90,7 +90,7 @@ public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
         String userEmail = ((User)authResult.getPrincipal()).getUsername(); // email
         UserDto userDetails = userService.getUserDetailsByEmail(userEmail);
 
-        byte[] secretKeyBytes = env.getProperty("token.secret").getBytes(StandardCharsets.UTF_8);
+        byte[] secretKeyBytes = environment.getProperty("token.secret").getBytes(StandardCharsets.UTF_8);
 
         SecretKey secretKey = Keys.hmacShaKeyFor(secretKeyBytes);
 
@@ -98,7 +98,7 @@ public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 
         String token = Jwts.builder()
                 .subject(userDetails.getUserId()) // UUID
-                .expiration(Date.from(now.plusMillis(Long.parseLong(env.getProperty("token.expiration-time")))))
+                .expiration(Date.from(now.plusMillis(Long.parseLong(environment.getProperty("token.expiration-time")))))
                 .issuedAt(Date.from(now))
                 .signWith(secretKey)
                 .compact();

@@ -4,6 +4,11 @@ server:
 spring:
   application:
     name: user-service
+  rabbitmq:
+    host: 127.0.0.1
+    port: 5672
+    username: guest
+    password: guest
 #  config:
 #    import: "optional:configserver:http://localhost:8888"
 #  profiles:
@@ -52,3 +57,4 @@ management:
           - health
           - beans
           - info
+          - busrefresh

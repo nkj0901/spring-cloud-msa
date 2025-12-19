@@ -44,9 +44,12 @@ public class WebSecurity {
         http.csrf( (csrf) -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/h2-console/**").permitAll()  // 특정 경로 허용
+                        .requestMatchers("/actuator/**").permitAll()  // 특정 경로 허용
+                        .requestMatchers("/health-check/**").permitAll()  // 특정 경로 허용
                         .requestMatchers("/**").access(
                                 new WebExpressionAuthorizationManager(
-                                        "hasIpAddress('127.0.0.1') or hasIpAddress('::1') or hasIpAddress('10.30.207.187')")) // host pc ip address
+                                        "hasIpAddress('127.0.0.1') or hasIpAddress('::1') or " +
+                                                "hasIpAddress('10.30.201.187')")) // host pc ip address
                         .anyRequest().authenticated()              // 그 외는 인증 필요
                 )
                 .authenticationManager(authenticationManager)
